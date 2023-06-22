@@ -7,19 +7,25 @@ import {
   Show,
   Switch,
 } from "solid-js";
+import { createMutable } from "solid-js/store";
 import { invoke } from "@tauri-apps/api/tauri";
 import { Fex } from "../src-tauri/bindings/Fex";
 import { FexFile } from "../src-tauri/bindings/FexFile";
-import FolderIcon from "./assets/folder";
-import DocumentIcon from "./assets/document";
+import {
+  DocumentIcon,
+  FolderIcon,
+  HiddenIcon,
+  VisibleIcon,
+} from "./assets/svgs";
 
 const [file, setFile] = createSignal<string>("");
-const [dir, setDir] = createSignal<String[]>([""]);
-const [filePath, setFilePath] = createSignal<String[]>([]);
+const dir = createMutable<{ path: string[] }>({ path: [] });
+const [filePath, setFilePath] = createSignal<string[]>([]);
 const [showHidden, setShowHidden] = createSignal(false);
 const [search, setSearch] = createSignal<string>("");
 
-const cd = () => dir().at(-1);
+const cd = () => dir.path.at(-1) ?? "Home";
+const pwd = () => dir.path.join("/");
 
 async function read_file() {
   let f: string = await invoke("send_file", { path: filePath().join("/") });
@@ -35,7 +41,7 @@ function App() {
     );
 
   async function get_files() {
-    let fex: Fex = await invoke("send_dir", { dir: dir().join("/") });
+    let fex: Fex = await invoke("send_dir", { dir: pwd() });
     setFiles(fex.files);
   }
 
@@ -46,40 +52,57 @@ function App() {
   });
 
   createEffect(() => {
-    console.log(dir());
+    console.log(dir);
   });
 
   return (
     <div class="h-screen w-screen">
-      <div class="flex border-b-gray-600 border-b-2 p-2 items-center justify-between">
-        <button
-          class="text-xl disabled:text-gray-600"
-          onclick={() => {
-            setFilePath([]);
-            setFile("");
-            setSearch("");
-            setDir((d) => d.filter((p) => p !== cd()));
-          }}
-          disabled={dir().length === 1}
-        >
-          &larr;
-        </button>
-        <input
-          type="text"
-          placeholder={`Search ${cd() === "" ? "Home" : cd()}`}
-          value={search()}
-          oninput={(e) => setSearch(e.currentTarget.value)}
-          class="bg-gray-600 text-white placeholder-white rounded-xl p-2"
-        />
-        <div>{dir().join("/")}</div>
-        <div class="text-4xl">Fex</div>
-        <div class="flex items-center justify-center gap-2">
+      <div class="flex border-b-gray-800 border-b p-2 items-center justify-between">
+        <div class="flex items-center gap-4">
+          <button
+            class="text-xl disabled:text-gray-600"
+            onclick={() => {
+              setFilePath([]);
+              setFile("");
+              setSearch("");
+              dir.path.filter((p) => p !== cd());
+            }}
+            disabled={dir.path.length === 1}
+          >
+            &larr;
+          </button>
+          <div
+            class="p-2 rounded-xl hover:bg-gray-800"
+            onclick={() => (dir.path = [])}
+          >
+            {"Home"}
+          </div>
+          <div>
+            <For each={dir.path}>
+              {(d, i) => (
+                <span
+                  class="p-2 rounded-xl hover:bg-gray-800"
+                  onclick={() => {
+                    dir.path = dir.path.slice(0, i() + 1);
+                  }}
+                >
+                  /{d}
+                </span>
+              )}
+            </For>
+          </div>
+        </div>
+        <div class="flex gap-4">
           <input
-            type="checkbox"
-            onclick={() => setShowHidden((p) => !p)}
-            id="show-hidden"
+            type="text"
+            placeholder={`Search ${cd()}`}
+            value={search()}
+            oninput={(e) => setSearch(e.currentTarget.value)}
+            class="bg-gray-800 text-white placeholder-white rounded-xl p-2"
           />
-          <label for="show-hidden">Show hidden items</label>
+          <button onclick={() => setShowHidden((p) => !p)}>
+            {showHidden() ? HiddenIcon() : VisibleIcon()}
+          </button>
         </div>
       </div>
       <Show
@@ -104,9 +127,9 @@ function App() {
 function handle_click_entry(f: FexFile) {
   setSearch("");
   if (f.file_type === "Dir" || f.file_type === "HiddenDir") {
-    setDir((d) => [...d, f.name]);
+    dir.path = [...dir.path, f.name];
   } else {
-    setFilePath([...dir(), f.name]);
+    setFilePath([...dir.path, f.name]);
     read_file();
   }
 }
