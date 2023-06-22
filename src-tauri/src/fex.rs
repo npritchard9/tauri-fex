@@ -2,7 +2,7 @@ use colored::Colorize;
 use serde::Serialize;
 use std::{
     fmt::Display,
-    fs::{read_dir, DirEntry},
+    fs::{read_dir, read_to_string, DirEntry},
     time::UNIX_EPOCH,
 };
 use tauri::api::path::home_dir;
@@ -39,6 +39,11 @@ impl Fex {
             self.read_dir(dir);
         }
         self.files.clone()
+    }
+
+    pub fn get_file(&self, path: &str) -> String {
+        let dir = format!("{}/{}", home_dir().unwrap().to_str().unwrap(), path);
+        read_to_string(dir).expect("the file at path to exist")
     }
 }
 

@@ -16,10 +16,15 @@ fn send_dir(fex_state: State<FexState>, dir: &str) -> Fex {
     fex_state.0.lock().unwrap().clone()
 }
 
+#[tauri::command]
+fn send_file(fex_state: State<FexState>, path: &str) -> String {
+    fex_state.0.lock().unwrap().get_file(path)
+}
+
 fn main() {
     tauri::Builder::default()
         .manage(FexState(Mutex::new(Fex::new())))
-        .invoke_handler(tauri::generate_handler![send_dir])
+        .invoke_handler(tauri::generate_handler![send_dir, send_file])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
