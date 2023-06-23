@@ -31,8 +31,9 @@ const dir = createMutable<{ path: string[] }>({ path: [] });
 const [filePath, setFilePath] = createSignal<string[]>([]);
 const [showHidden, setShowHidden] = createSignal(false);
 const [search, setSearch] = createSignal<string>("");
-const [quickAccess, setQuickAccess] = createSignal<QuickAccessItem[]>([]);
-
+const [quickAccess, setQuickAccess] = createSignal<QuickAccessItem[]>(
+  JSON.parse(localStorage.getItem("quickAccess")!) ?? []
+);
 const cd = () => dir.path.at(-1) ?? "Home";
 const pwd = () => dir.path.join("/");
 
@@ -64,6 +65,10 @@ function App() {
     console.log(dir);
   });
 
+  createEffect(() => {
+    localStorage.setItem("quickAccess", JSON.stringify(quickAccess()));
+  });
+
   return (
     <div class="h-screen w-screen">
       <div class="flex border-b-gray-800 border-b p-2 items-center justify-between">
@@ -93,6 +98,8 @@ function App() {
                   <span
                     class="flex items-center p-2 rounded-xl hover:bg-gray-800"
                     onclick={() => {
+                      setFile("");
+                      setFilePath([]);
                       dir.path = dir.path.slice(0, i() + 1);
                     }}
                   >
