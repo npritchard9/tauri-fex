@@ -12,6 +12,7 @@ import { invoke } from "@tauri-apps/api/tauri";
 import { Fex } from "../src-tauri/bindings/Fex";
 import { FexFile } from "../src-tauri/bindings/FexFile";
 import {
+  ChevronIcon,
   DocumentIcon,
   FolderIcon,
   HiddenIcon,
@@ -65,31 +66,34 @@ function App() {
               setFilePath([]);
               setFile("");
               setSearch("");
-              dir.path.filter((p) => p !== cd());
+              dir.path.pop();
             }}
-            disabled={dir.path.length === 1}
+            disabled={dir.path.length === 0}
           >
             &larr;
           </button>
-          <div
-            class="p-2 rounded-xl hover:bg-gray-800"
-            onclick={() => (dir.path = [])}
-          >
-            {"Home"}
-          </div>
-          <div>
-            <For each={dir.path}>
-              {(d, i) => (
-                <span
-                  class="p-2 rounded-xl hover:bg-gray-800"
-                  onclick={() => {
-                    dir.path = dir.path.slice(0, i() + 1);
-                  }}
-                >
-                  /{d}
-                </span>
-              )}
-            </For>
+          <div class="flex items-center">
+            <div
+              class="p-2 rounded-xl hover:bg-gray-800"
+              onclick={() => (dir.path = [])}
+            >
+              {"Home"}
+            </div>
+            <div class="flex items-center">
+              <For each={dir.path}>
+                {(d, i) => (
+                  <span
+                    class="flex items-center p-2 rounded-xl hover:bg-gray-800"
+                    onclick={() => {
+                      dir.path = dir.path.slice(0, i() + 1);
+                    }}
+                  >
+                    <ChevronIcon />
+                    {d}
+                  </span>
+                )}
+              </For>
+            </div>
           </div>
         </div>
         <div class="flex gap-4">
@@ -150,10 +154,10 @@ const File = (f: FexFile) => {
         >
           <span>{icon}</span>
           <span class="font-bold overflow-x-scroll w-1/3">{f.name}</span>
-          <span class="text-amber-300 w-16">{f.len as unknown as number}</span>
-          <span class="text-blue-300">
+          <span>
             {f.date} {f.time}
           </span>
+          <span>{f.file_type}</span>
         </div>
       </Match>
       <Match when={!showHidden()}>
@@ -164,12 +168,10 @@ const File = (f: FexFile) => {
           >
             <span>{icon}</span>
             <span class="font-bold overflow-x-scroll w-1/3">{f.name}</span>
-            <span class="text-amber-300 w-16">
-              {f.len as unknown as number}
-            </span>
-            <span class="text-blue-300">
+            <span>
               {f.date} {f.time}
             </span>
+            <span>{f.file_type}</span>
           </div>
         </Show>
       </Match>

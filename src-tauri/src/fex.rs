@@ -8,7 +8,7 @@ use std::{
 use tauri::api::path::home_dir;
 use ts_rs::TS;
 
-use chrono::{Datelike, Month, TimeZone, Timelike};
+use chrono::{Datelike, TimeZone, Timelike};
 
 #[derive(Serialize, TS, Clone)]
 #[ts(export)]
@@ -94,14 +94,19 @@ impl From<DirEntry> for FexFile {
                 .expect("to be able to read duration since")
                 .as_secs();
             let date = chrono::Utc.timestamp_opt(secs as i64, 0).unwrap();
-            let month = Month::try_from(u8::try_from(date.month()).unwrap())
-                .ok()
-                .unwrap();
+            let month = date.month();
             let day = date.day();
-            let hours = date.hour();
+            let year = date.year();
+            let hours = date.hour12();
             let mins = date.minute();
-            let time = format!("{}:{}", hours, mins);
-            let date = format!("{} {}", day, month.name());
+            let mins = if mins <= 9 {
+                format!("0{mins}")
+            } else {
+                format!("{mins}")
+            };
+            let am_or_pm = if hours.0 { "AM" } else { "PM" };
+            let time = format!("{}:{} {}", hours.1, mins, am_or_pm);
+            let date = format!("{}/{}/{}", month, day, year);
             let name = entry
                 .file_name()
                 .to_str()
