@@ -155,7 +155,11 @@ const SidebarItem = (props: { d: QuickAccessItem }) => {
   return (
     <div
       class="flex justify-between group"
-      ondblclick={() => (dir.path = props.d.path.split("/"))}
+      ondblclick={() => {
+        setFile("");
+        setFilePath([]);
+        dir.path = props.d.path.split("/");
+      }}
     >
       <div class="flex gap-2">
         <FolderIcon />
@@ -198,7 +202,7 @@ const File = (f: FexFile) => {
           ondblclick={() => handle_click_entry(f)}
         >
           <span>{icon}</span>
-          <span class="font-bold overflow-x-scroll w-1/3">{f.name}</span>
+          <span class="font-bold w-1/3 line-clamp-1">{f.name}</span>
           <span>
             {f.date} {f.time}
           </span>
@@ -211,10 +215,10 @@ const File = (f: FexFile) => {
             class="group flex items-center justify-between mx-2 p-2 hover:bg-gray-800 hover:rounded-xl"
             ondblclick={() => handle_click_entry(f)}
           >
-            <div class="grid grid-cols-3 w-3/4">
+            <div class="grid grid-cols-3 w-3/4 gap-4">
               <div class="flex items-center gap-4">
                 <span>{icon}</span>
-                <span class="font-bold overflow-x-scroll">{f.name}</span>
+                <span class="font-bold line-clamp-1">{f.name}</span>
               </div>
               <span class="flex justify-start">
                 {f.date} {f.time}
