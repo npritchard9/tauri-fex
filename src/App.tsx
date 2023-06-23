@@ -14,6 +14,7 @@ import { FexFile } from "../src-tauri/bindings/FexFile";
 import {
   ChevronIcon,
   DocumentIcon,
+  FavoriteIcon,
   FolderIcon,
   HiddenIcon,
   VisibleIcon,
@@ -24,6 +25,7 @@ const dir = createMutable<{ path: string[] }>({ path: [] });
 const [filePath, setFilePath] = createSignal<string[]>([]);
 const [showHidden, setShowHidden] = createSignal(false);
 const [search, setSearch] = createSignal<string>("");
+const [quickAccess, setQuickAccess] = createSignal<string[]>([]);
 
 const cd = () => dir.path.at(-1) ?? "Home";
 const pwd = () => dir.path.join("/");
@@ -109,24 +111,40 @@ function App() {
           </button>
         </div>
       </div>
-      <Show
-        when={file() === ""}
-        fallback={
-          <pre>
-            <code>{file()}</code>
-          </pre>
-        }
-      >
-        <Show
-          when={search()}
-          fallback={<For each={files()}>{(f) => <File {...f} />}</For>}
-        >
-          <For each={filtered_files()}>{(f) => <File {...f} />}</For>
-        </Show>
-      </Show>
+      <div class="flex h-full w-full">
+        <div class="w-1/5 border-r border-gray-800">
+          <For each={quickAccess()}>{(q) => <SidebarItem d={q} />}</For>
+        </div>
+        <div class="flex flex-col w-full">
+          <Show
+            when={file() === ""}
+            fallback={
+              <pre class="m-4">
+                <code>{file()}</code>
+              </pre>
+            }
+          >
+            <Show
+              when={search()}
+              fallback={<For each={files()}>{(f) => <File {...f} />}</For>}
+            >
+              <For each={filtered_files()}>{(f) => <File {...f} />}</For>
+            </Show>
+          </Show>
+        </div>
+      </div>
     </div>
   );
 }
+
+const SidebarItem = (props: { d: string }) => {
+  return (
+    <div class="flex gap-2">
+      <FolderIcon />
+      {props.d}
+    </div>
+  );
+};
 
 function handle_click_entry(f: FexFile) {
   setSearch("");
@@ -163,12 +181,14 @@ const File = (f: FexFile) => {
       <Match when={!showHidden()}>
         <Show when={f.file_type === "File" || f.file_type === "Dir"}>
           <div
-            class="flex items-center justify-start gap-4 mx-2 p-2 hover:bg-gray-800 hover:rounded-xl"
+            class="grid grid-cols-3 items-center justify-between mx-2 p-2 hover:bg-gray-800 hover:rounded-xl"
             onclick={() => handle_click_entry(f)}
           >
-            <span>{icon}</span>
-            <span class="font-bold overflow-x-scroll w-1/3">{f.name}</span>
-            <span>
+            <div class="flex items-center gap-4">
+              <span>{icon}</span>
+              <span class="font-bold overflow-x-scroll">{f.name}</span>
+            </div>
+            <span class="flex justify-start">
               {f.date} {f.time}
             </span>
             <span>{f.file_type}</span>
