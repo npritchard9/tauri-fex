@@ -13,6 +13,7 @@ import { Fex } from "../src-tauri/bindings/Fex";
 import { FexFile } from "../src-tauri/bindings/FexFile";
 import {
   ChevronIcon,
+  DeleteIcon,
   DocumentIcon,
   FavoriteIcon,
   FolderIcon,
@@ -20,12 +21,17 @@ import {
   VisibleIcon,
 } from "./assets/svgs";
 
+type QuickAccessItem = {
+  name: string;
+  path: string;
+};
+
 const [file, setFile] = createSignal<string>("");
 const dir = createMutable<{ path: string[] }>({ path: [] });
 const [filePath, setFilePath] = createSignal<string[]>([]);
 const [showHidden, setShowHidden] = createSignal(false);
 const [search, setSearch] = createSignal<string>("");
-const [quickAccess, setQuickAccess] = createSignal<string[]>([]);
+const [quickAccess, setQuickAccess] = createSignal<QuickAccessItem[]>([]);
 
 const cd = () => dir.path.at(-1) ?? "Home";
 const pwd = () => dir.path.join("/");
@@ -112,7 +118,8 @@ function App() {
         </div>
       </div>
       <div class="flex h-full w-full">
-        <div class="w-1/5 border-r border-gray-800">
+        <div class="w-1/5 flex flex-col justify-start gap-2 border-r p-2 border-gray-800">
+          <div class="text-2xl">Quick Access</div>
           <For each={quickAccess()}>{(q) => <SidebarItem d={q} />}</For>
         </div>
         <div class="flex flex-col w-full">
@@ -137,11 +144,24 @@ function App() {
   );
 }
 
-const SidebarItem = (props: { d: string }) => {
+const SidebarItem = (props: { d: QuickAccessItem }) => {
   return (
-    <div class="flex gap-2">
-      <FolderIcon />
-      {props.d}
+    <div
+      class="flex justify-between group"
+      ondblclick={() => (dir.path = props.d.path.split("/"))}
+    >
+      <div class="flex gap-2">
+        <FolderIcon />
+        {props.d.name}
+      </div>
+      <button
+        class="invisible group-hover:visible"
+        onclick={() =>
+          setQuickAccess((p) => p.filter((q) => q.path != props.d.path))
+        }
+      >
+        <DeleteIcon />
+      </button>
     </div>
   );
 };
@@ -168,7 +188,7 @@ const File = (f: FexFile) => {
       <Match when={showHidden()}>
         <div
           class="flex items-center justify-start gap-4 mx-2 p-2 hover:bg-gray-800 hover:rounded-xl"
-          onclick={() => handle_click_entry(f)}
+          ondblclick={() => handle_click_entry(f)}
         >
           <span>{icon}</span>
           <span class="font-bold overflow-x-scroll w-1/3">{f.name}</span>
@@ -181,17 +201,38 @@ const File = (f: FexFile) => {
       <Match when={!showHidden()}>
         <Show when={f.file_type === "File" || f.file_type === "Dir"}>
           <div
-            class="grid grid-cols-3 items-center justify-between mx-2 p-2 hover:bg-gray-800 hover:rounded-xl"
-            onclick={() => handle_click_entry(f)}
+            class="group flex items-center justify-between mx-2 p-2 hover:bg-gray-800 hover:rounded-xl"
+            ondblclick={() => handle_click_entry(f)}
           >
-            <div class="flex items-center gap-4">
-              <span>{icon}</span>
-              <span class="font-bold overflow-x-scroll">{f.name}</span>
+            <div class="grid grid-cols-3 w-3/4">
+              <div class="flex items-center gap-4">
+                <span>{icon}</span>
+                <span class="font-bold overflow-x-scroll">{f.name}</span>
+              </div>
+              <span class="flex justify-start">
+                {f.date} {f.time}
+              </span>
+              <span>{f.file_type}</span>
             </div>
-            <span class="flex justify-start">
-              {f.date} {f.time}
-            </span>
-            <span>{f.file_type}</span>
+            <Show when={f.file_type === "Dir"}>
+              <button
+                class="invisible group-hover:visible"
+                onclick={() => {
+                  let path = pwd() === "" ? f.name : pwd() + "/" + f.name;
+                  if (
+                    (f.file_type === "Dir" || f.file_type === "HiddenDir") &&
+                    !quickAccess().includes({
+                      name: f.name,
+                      path: path,
+                    })
+                  ) {
+                    setQuickAccess((p) => [...p, { name: f.name, path: path }]);
+                  }
+                }}
+              >
+                <FavoriteIcon />
+              </button>
+            </Show>
           </div>
         </Show>
       </Match>
