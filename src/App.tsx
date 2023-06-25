@@ -62,10 +62,6 @@ function App() {
   });
 
   createEffect(() => {
-    console.log(dir);
-  });
-
-  createEffect(() => {
     localStorage.setItem("quickAccess", JSON.stringify(quickAccess()));
   });
 
@@ -220,7 +216,7 @@ const File = (f: FexFile) => {
                 <span>{icon}</span>
                 <span class="font-bold line-clamp-1">{f.name}</span>
               </div>
-              <span class="flex justify-start">
+              <span class="flex justify-start line-clamp-1">
                 {f.date} {f.time}
               </span>
               <span>{f.file_type}</span>
@@ -230,14 +226,12 @@ const File = (f: FexFile) => {
                 class="invisible group-hover:visible"
                 onclick={() => {
                   let path = pwd() === "" ? f.name : pwd() + "/" + f.name;
+                  let cur_dir = { name: f.name, path: path };
                   if (
                     (f.file_type === "Dir" || f.file_type === "HiddenDir") &&
-                    !quickAccess().includes({
-                      name: f.name,
-                      path: path,
-                    })
+                    !quickAccess().find((x) => x.path == path)
                   ) {
-                    setQuickAccess((p) => [...p, { name: f.name, path: path }]);
+                    setQuickAccess((p) => [...p, cur_dir]);
                   }
                 }}
               >
